@@ -1,8 +1,7 @@
 {
   "image": "mcr.microsoft.com/devcontainers/rust:latest",
-  "features": {
-    "ghcr.io/devcontainers/features/protobuf:1": {} // Add this line
-  },
+  // Removed the 'features' section for protobuf
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y protobuf-compiler",
   "customizations": {
     "vscode": {
       "extensions": [
@@ -12,4 +11,3 @@
     }
   }
 }
-
