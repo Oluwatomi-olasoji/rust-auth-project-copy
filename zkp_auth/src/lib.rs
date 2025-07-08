@@ -1,3 +1,5 @@
+//This library provides functions to generate zero knowledge proofs
+//and to verify them
 use num_bigint::{BigUint, RandBigInt}; 
 use rand;
 use hex;

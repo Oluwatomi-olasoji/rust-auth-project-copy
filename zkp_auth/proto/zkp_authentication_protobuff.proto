@@ -1,0 +1,42 @@
+syntax = "proto3";
+package zkp_auth;
+
+//the prover sends a registration message by sending y1 and y2
+message RegisterRequest{
+    string user = 1; //1 means it is the first argument
+    bytes y1 = 2;
+    bytes y2 = 3;
+}
+ message RegisterResponse{
+
+}
+
+//the prover asks for a challenge in the server by sending r1 and r2
+//the verifier sends the challenge
+message ChallengeRequest{
+    string user = 1; //1 means it is the first argument
+    bytes r1 = 2;
+    bytes r2 = 3;
+}
+message ChallengeResponse{
+    string auth_id = 1;
+    bytes c = 2;
+}
+
+//te prover sends the solution to the challenge s= k - c * x mod q
+//the verifier sends the session ID
+
+message SolutionRequest{
+    string auth_id = 1;
+    bytes s = 2;
+
+}
+message SolutionResponse{
+    string session_id = 1; //this is what allows the user to maintain a session
+}
+
+service Auth {
+    rpc Register(RegisterRequest) returns (RegisterResponse) {}
+    rpc CreateChallenge(ChallengeRequest) returns (ChallengeResponse){}
+    rpc VerifyAuthentication(SolutionRequest) returns (SolutionResponse){}
+}

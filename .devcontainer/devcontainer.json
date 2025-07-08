@@ -1,3 +1,15 @@
 {
-  "image": "mcr.microsoft.com/devcontainers/rust:latest"
+  "image": "mcr.microsoft.com/devcontainers/rust:latest",
+  "features": {
+    "ghcr.io/devcontainers/features/protobuf:1": {} // Add this line
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "rust-lang.rust-analyzer",
+        "pbkit.vscode-pbkit"
+      ]
+    }
+  }
 }
+
