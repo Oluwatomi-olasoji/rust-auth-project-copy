@@ -1,0 +1,1 @@
+{"rustc":15597765236515928571,"features":"","declared_features":"","target":0,"profile":0,"path":0,"deps":[[3699176911518302786,"build_script_build",false,5715217175475512200]],"local":[{"RerunIfChanged":{"output":"debug/build/zkp_auth-60a8ce6f3e7e68ce/output","paths":["proto/zkp_authentication_protobuff.proto","proto/"]}}],"rustflags":[],"config":0,"compile_kind":0}
