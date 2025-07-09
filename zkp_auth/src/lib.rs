@@ -6,10 +6,10 @@ use hex;
 use rand::Rng;
 
 pub struct ZKP {
-    p: BigUint,
-    q: BigUint, //order of the egrouo
-    alpha: BigUint,
-    beta: BigUint,
+    pub p: BigUint,
+    pub q: BigUint, //order of the egrouo
+    pub alpha: BigUint,
+    pub beta: BigUint,
 
 }
 

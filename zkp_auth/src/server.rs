@@ -46,7 +46,13 @@ impl Auth for AuthImpl {
         let request = request.into_inner();//into inner gives us access to the the private field
 
         let username = request.user;
-        
+
+        //to prevent empty entries for y1 and y2, which can break the proof
+        if (request.y1.is_empty()|| request.y2.is_empty()) {
+        return Err(Status::new(Code::InvalidArgument, "Public key y cannot be empty."));
+        }
+         
+
         let mut userInfo = UserInformation::default();
         userInfo.username = username.clone();
         userInfo.y1 =  BigUint::from_bytes_be(&request.y1);
@@ -65,6 +71,13 @@ impl Auth for AuthImpl {
 
         let username = request.user;
         
+        //to prevent any empty requests that can break the code
+        if (request.r1.is_empty() || request.r2.is_empty()){
+        return Err(Status::new(Code::InvalidArgument, "Commitments cannot be empty."));
+        }
+        //
+
+
         let mut userInfo_storage = &mut self.userInfo.lock().unwrap(); //need to dd errror handling
        
         if let Some(userInfo) = userInfo_storage.get_mut(&username) {
@@ -74,7 +87,10 @@ impl Auth for AuthImpl {
             let (_,_,_, q) = ZKP::get_zkp_constants(); //takes only the q(order) variable returned from the ZKP library 
 
             let c = ZKP::generate_random_number_less_than(&q);
-            let auth_id = "olololo".to_string();
+            let auth_id = ZKP::generate_random_string(12);
+            
+            //storing c
+            userInfo.c = c.clone();
 
             //Storing the user id for each username
             let mut auth_id_user_hashmap = &mut self.auth_id_user_hashmap.lock().unwrap(); //need to dd errror handling
@@ -86,10 +102,56 @@ impl Auth for AuthImpl {
         }
 
 }
-     async fn verify_authentication(&self, request:Request<SolutionRequest>) -> Result<Response<SolutionResponse>,Status> {
-        todo!()
-}
+
+
+      async fn verify_authentication(&self, request:Request<SolutionRequest>) -> Result<Response<SolutionResponse>,Status> {
+        println!("Processing Verification request: {:?}", request);
+        let request = request.into_inner();//into inner gives us access to the the private field
+
+        let auth_id = request.auth_id;
+        
+        //preventing an empty solution
+        if auth_id.is_empty() {
+        return Err(Status::new(Code::InvalidArgument, "Authentication ID cannot be empty."));
+        }
+
+        if request.s.is_empty() {
+        return Err(Status::new(Code::InvalidArgument, "Solution 's' cannot be empty."));
+        }
+        ///////
+        
+        let mut auth_id_user_hashmap = &mut self.auth_id_user_hashmap.lock().unwrap(); //need to dd errror handling
+
+        if let Some(username) = auth_id_user_hashmap.get(&auth_id) {
+            let mut userInfo_storage = &mut self.userInfo.lock().unwrap(); //need to dd errror handling
+            let userInfo = userInfo_storage.get_mut(username).expect("auth id not found");
+
+            let s = BigUint::from_bytes_be(&request.s);
+
+            //creating the zkp instance
+            let (alpha, beta, p, q) = ZKP::get_zkp_constants();
+            let zkp = ZKP {alpha, beta, p, q};
+            
+            //creating the veriication result usinf the verfiy solution function
+            let verification_result = zkp.verify_solution(&userInfo.r1, &userInfo.r2, &userInfo.y1, &userInfo.y2, &userInfo.c, &s);
+            println!("Veification result: {}", verification_result);
+
+            if verification_result { //the the verification of the solution is succesfull
+                let session_id = ZKP::generate_random_string(12);
+                
+
+                Ok(Response::new(SolutionResponse{session_id}))
+      
+            } else{
+
+                  Err(Status::new(Code::PermissionDenied, format!("AuthId: {} sent an incorrect solution", auth_id)))
+            }
+           
+        } else {
+            Err(Status::new(Code::NotFound, format!("AuthId: {} not found in database", auth_id)))
+        }
     
+}
 }
 
 #[tokio::main] //this makes it an synchronous function
