@@ -1,1 +1,0 @@
-/workspaces/rust-auth-project-copy/zkp_auth/target/debug/libzkp_auth.rlib: /workspaces/rust-auth-project-copy/zkp_auth/build.rs /workspaces/rust-auth-project-copy/zkp_auth/proto/ /workspaces/rust-auth-project-copy/zkp_auth/proto/zkp_authentication_protobuff.proto /workspaces/rust-auth-project-copy/zkp_auth/src/lib.rs

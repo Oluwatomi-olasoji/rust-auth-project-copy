@@ -1,2 +1,0 @@
-cargo:rerun-if-changed=proto/zkp_authentication_protobuff.proto
-cargo:rerun-if-changed=proto/
