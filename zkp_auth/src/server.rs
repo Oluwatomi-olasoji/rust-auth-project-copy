@@ -1,4 +1,4 @@
-
+mod ssi;
 use num_bigint::BigUint;
 use tonic::{transport::Server, Code,Request, Response, Status, codegen::http::request};
 use zkp_auth::auth_server::{Auth, AuthServer}; 
@@ -66,6 +66,7 @@ impl Auth for AuthImpl {
 
 
     async fn create_challenge(&self, request:Request<ChallengeRequest>) -> Result<Response<ChallengeResponse>,Status> {
+        println!("\n=== CHALLENGE SERVICE ===");
         println!("Processing Challenge request: {:?}", request);
         let request = request.into_inner();//into inner gives us access to the the private field
 
@@ -105,10 +106,15 @@ impl Auth for AuthImpl {
 
 
       async fn verify_authentication(&self, request:Request<SolutionRequest>) -> Result<Response<SolutionResponse>,Status> {
+        
+        println!("\n=== ZKP VERIFIER ===");
+       
+
         println!("Processing Verification request: {:?}", request);
         let request = request.into_inner();//into inner gives us access to the the private field
 
         let auth_id = request.auth_id;
+        println!("  Verifying proof for user: {}", auth_id);
         
         //preventing an empty solution
         if auth_id.is_empty() {
@@ -136,16 +142,19 @@ impl Auth for AuthImpl {
             let verification_result = zkp.verify_solution(&userInfo.r1, &userInfo.r2, &userInfo.y1, &userInfo.y2, &userInfo.c, &s);
             println!("Veification result: {}", verification_result);
 
-            if verification_result { //the the verification of the solution is succesfull
-                let session_id = ZKP::generate_random_string(12);
-                
-
-                Ok(Response::new(SolutionResponse{session_id}))
-      
-            } else{
-
-                  Err(Status::new(Code::PermissionDenied, format!("AuthId: {} sent an incorrect solution", auth_id)))
-            }
+            if verification_result {
+    let session_id = ZKP::generate_random_string(12);
+    
+    println!("  ✅ Proof verified successfully!");
+    println!("  ✅ Identity assertion confirmed");
+    println!("  → Granting access with session: {}", session_id);
+    
+    Ok(Response::new(SolutionResponse{session_id}))
+} else {
+    println!("  ❌ Proof verification failed!");
+    Err(Status::new(Code::PermissionDenied, 
+    format!("Identity verification failed for auth_id: {}", auth_id)))
+}
            
         } else {
             Err(Status::new(Code::NotFound, format!("AuthId: {} not found in database", auth_id)))
