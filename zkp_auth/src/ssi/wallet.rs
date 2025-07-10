@@ -2,78 +2,99 @@ use super::credential::VerifiableCredential;
 use num_bigint::BigUint;
 use std::fs;
 use ::zkp_auth::ZKP;
+use serde::{Serialize, Deserialize};
 
 // The wallet stores credentials and generates ZKP proofs
+
+
+// Store wallet data including secret
+#[derive(Serialize, Deserialize)]
+pub struct WalletData {
+    pub credential: VerifiableCredential,
+    pub secret: String,  // Store as string for JSON
+}
+
 pub struct Wallet {
+    username: String,
     credential: Option<VerifiableCredential>,
-    zkp_secret: BigUint,  // The secret 'x' used for ZKP
+    zkp_secret: Option<BigUint>,
 }
 
 impl Wallet {
-    // Create a new wallet with a secret
-    pub fn new(secret: BigUint) -> Self {
+    // Create new wallet for a user
+    pub fn new(username: String) -> Self {
         Self {
+            username,
             credential: None,
-            zkp_secret: secret,
+            zkp_secret: None,
         }
     }
     
-    // === CREDENTIAL STORAGE Functions ===
-    
-    // Save credential to a JSON file
-    pub fn store_credential(&mut self, credential: VerifiableCredential) {
-        // Create filename based on username
-        let filename = format!("{}_wallet.json", credential.subject);
-        
-        // Convert credential to JSON
-        let json = serde_json::to_string_pretty(&credential).unwrap();
-        
-        // Write to file
-        fs::write(&filename, json).unwrap();
-        
-        // Also store in memory
-        self.credential = Some(credential);
-        
-        println!("✓ Credential stored in wallet file: {}", filename);
+    // Generate a new secret for this wallet
+    pub fn generate_secret(&mut self, q: &BigUint) -> BigUint {
+        let secret = ZKP::generate_random_number_less_than(q);
+        self.zkp_secret = Some(secret.clone());
+        println!("✓ Generated new secret for wallet");
+        secret
     }
     
-    // Load credential from file if it exists
-    pub fn load_credential(&mut self, username: &str) -> bool {
-        let filename = format!("{}_wallet.json", username);
+    // Store credential AND secret
+    pub fn store_credential(&mut self, credential: VerifiableCredential) {
+        let wallet_data = WalletData {
+            credential: credential.clone(),
+            secret: self.zkp_secret.as_ref().unwrap().to_string(),
+        };
         
-        // Try to read the file
+        let filename = format!("{}_wallet.json", self.username);
+        let json = serde_json::to_string_pretty(&wallet_data).unwrap();
+        fs::write(&filename, json).unwrap();
+        
+        self.credential = Some(credential);
+        println!("✓ Wallet saved with credential and secret");
+    }
+    
+    // Load wallet including secret
+    pub fn load(&mut self) -> bool {
+        let filename = format!("{}_wallet.json", self.username);
+        
         if let Ok(data) = fs::read_to_string(&filename) {
-            // Try to parse the JSON
-            if let Ok(cred) = serde_json::from_str::<VerifiableCredential>(&data) {
-                self.credential = Some(cred);
-                println!("✓ Loaded existing credential from wallet");
+            if let Ok(wallet_data) = serde_json::from_str::<WalletData>(&data) {
+                self.credential = Some(wallet_data.credential);
+                self.zkp_secret = Some(wallet_data.secret.parse().unwrap());
+                println!("✓ Loaded wallet for {}", self.username);
                 return true;
             }
         }
-        
-        println!("ℹ️ No existing credential found");
         false
     }
     
-    // === ZKP GENERATOR Functions ===
-    
-    // Generate a ZKP proof for a given challenge
-    pub fn generate_proof(&self, challenge: &BigUint, zkp: &ZKP) -> BigUint {
-        // Generate random k
-        let k = ZKP::generate_random_number_less_than(&zkp.q);
-        
-        // Compute s = k - c * x mod q
-        zkp.solve(&k, challenge, &self.zkp_secret)
+    // Generate complete authentication data
+    pub fn generate_auth_data(&self, zkp: &ZKP) -> Option<(BigUint, BigUint, BigUint)> {
+        if let (Some(cred), Some(secret)) = (&self.credential, &self.zkp_secret) {
+            // Generate k for this authentication
+            let k = ZKP::generate_random_number_less_than(&zkp.q);
+            
+            // Get y1, y2 from credential
+            let y1 = BigUint::from_bytes_be(&cred.zkp_params.y1);
+            let y2 = BigUint::from_bytes_be(&cred.zkp_params.y2);
+            
+            // Compute r1, r2
+            let r1 = ZKP::exponentiate(&zkp.alpha, &k, &zkp.p);
+            let r2 = ZKP::exponentiate(&zkp.beta, &k, &zkp.p);
+            
+            Some((r1, r2, k))
+        } else {
+            None
+        }
     }
     
-    // === Helper Functions ===
-    
-    // Get the stored credential
-    pub fn get_credential(&self) -> Option<&VerifiableCredential> {
-        self.credential.as_ref()
+    // Generate proof given challenge
+    pub fn generate_proof(&self, k: &BigUint, challenge: &BigUint, zkp: &ZKP) -> BigUint {
+        let secret = self.zkp_secret.as_ref().unwrap();
+        zkp.solve(k, challenge, secret)
     }
     
-    // Get ZKP parameters from the credential
+    // Get ZKP params for registration
     pub fn get_zkp_params(&self) -> Option<(BigUint, BigUint)> {
         if let Some(cred) = &self.credential {
             let y1 = BigUint::from_bytes_be(&cred.zkp_params.y1);
@@ -84,45 +105,3 @@ impl Wallet {
         }
     }
 }
-// use super::credential::VerifiableCredential;
-// use std::fs;
-
-// pub struct Wallet {
-//     pub username: String,
-//     pub credential: Option<VerifiableCredential>,
-// }
-
-// impl Wallet {
-//     // Create new wallet for a user
-//     pub fn new(username: String) -> Self {
-//         Self {
-//             username,
-//             credential: None,
-//         }
-//     }
-    
-//     // Try to load existing wallet from file
-//     pub fn load(username: &str) -> Option<VerifiableCredential> {
-//         let filename = format!("{}_credential.json", username);
-        
-//         if let Ok(data) = fs::read_to_string(&filename) {
-//             if let Ok(cred) = serde_json::from_str(&data) {
-//                 println!("✓ Found existing credential for {}", username);
-//                 return Some(cred);
-//             }
-//         }
-        
-//         None
-//     }
-    
-//     // Save credential to file
-//     pub fn save_credential(&mut self, credential: VerifiableCredential) {
-//         self.credential = Some(credential.clone());
-        
-//         let filename = format!("{}_credential.json", self.username);
-//         let json = serde_json::to_string_pretty(&credential).unwrap();
-        
-//         fs::write(&filename, json).unwrap();
-//         println!("✓ Credential saved to {}", filename);
-//     }
-// }
