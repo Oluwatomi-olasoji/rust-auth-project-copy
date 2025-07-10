@@ -57,7 +57,11 @@ pub fn get_zkp_constants() -> (BigUint, BigUint, BigUint, BigUint){
     let alpha = BigUint::from_bytes_be(&hex::decode("A4D1CBD5C3FD34126765A442EFB99905F8104DD258AC507FD6406CFF14266D31266FEA1E5C41564B777E690F5504F213160217B4B01B886A5E91547F9E2749F4D7FBD7D3B9A92EE1909D0D2263F80A76A6A24C087A091F531DBF0A0169B6A28AD662A4D18E73AFA32D779D5918D08BC8858F4DCEF97C2A24855E6EEB22B3B2E5").unwrap());
        
     //since alpha is a generator, alpha^x is a generator, this is a property in group theory
-    let beta = alpha.modpow(&ZKP::generate_random_number_less_than(&q), &p);
+    let exp = BigUint::from_bytes_be(
+        &hex::decode("266FEA1E5C41564B777E69").unwrap(),
+    );
+
+    let beta = alpha.modpow(&exp, &p);
     (alpha, beta,p, q )
 }
 }
