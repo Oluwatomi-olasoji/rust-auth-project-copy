@@ -17,6 +17,7 @@ pub mod zkp_auth{
 #[tokio::main]
 async fn main(){
     let mut buf = String::new();
+
     //creating the zkp instance
     let (alpha, beta, p, q) = ZKP::get_zkp_constants();
     let zkp = ZKP {alpha: alpha.clone(), beta: beta.clone(), p: p.clone(), q: q.clone()};
@@ -24,18 +25,18 @@ async fn main(){
     let mut client = AuthClient::connect("http://127.0.0.1:50051").await.expect("could not connect to server");
     println!(" Connected to the server");
 
-    //getting the username for regustration and authentication
+    //getting the username for registration and authentication
     println!("Provide a username: ");
     stdin().read_line(&mut buf).expect("could not read username");
     let username = buf.trim().to_string();
     buf.clear();//empties the buffer
 
-    // === REGISTRATION OR LOGIN ===
+    // === REGISTRATION OR LOGIN BEGINS ===
     let mut wallet = Wallet::new(username.clone());
 
     if wallet.load() {
         // === PASSWORDLESS LOGIN FLOW ===
-        println!("\n🔐 PASSWORDLESS AUTHENTICATION");
+        println!("\nPASSWORDLESS AUTHENTICATION");
         println!("Found wallet for {}. Login with wallet? (y/n): ", username);
         
         stdin().read_line(&mut buf).expect("could not read response");
@@ -47,13 +48,13 @@ async fn main(){
             return;
         }
         
-        // Get stored credential params
+        // gets stored credential params
         let (y1, y2) = wallet.get_zkp_params().unwrap();
         
-        // No need to register again, go straight to authentication
+        
         println!("\n→ Authenticating with wallet...");
         
-        // Generate authentication data using wallet
+        // generate authentication data using wallet
         let (r1, r2, k) = wallet.generate_auth_data(&zkp).unwrap();
         
         // Request challenge
@@ -69,10 +70,10 @@ async fn main(){
         let auth_id = response.auth_id;
         let c = BigUint::from_bytes_be(&response.c);
         
-        // Wallet generates proof
+        // wallet generates proof
         let s = wallet.generate_proof(&k, &c, &zkp);
         
-        // Send proof
+        // create a request to send the proof
         let request = SolutionRequest {
             auth_id,
             s: s.to_bytes_be(),
@@ -93,24 +94,25 @@ async fn main(){
         println!("\n👤 NEW USER REGISTRATION");
         println!("No wallet found. Creating new account...");
         
-        // Wallet generates its own secret
+        // wallet generates the user secret
         let secret = wallet.generate_secret(&q);
         
-        // Compute y1, y2
+        // computes y1, y2
         let y1 = ZKP::exponentiate(&alpha, &secret, &p);
         let y2 = ZKP::exponentiate(&beta, &secret, &p);
         
-        // Issue credential
+        // Issues credentials for the user
         let credential = Issuer::issue_credential(&username, &y1, &y2);
         wallet.store_credential(credential);
         
-        // Register with server
+        // create request to register with server
         let request = RegisterRequest{
             user: username.clone(),
             y1: y1.to_bytes_be(),
             y2: y2.to_bytes_be(),
         };
         
+        //send the request
         client.register(request).await.expect("could not register");
         
         println!("\n✅ Registration complete!");
