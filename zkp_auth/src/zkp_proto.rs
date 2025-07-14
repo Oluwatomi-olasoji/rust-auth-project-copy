@@ -151,9 +151,9 @@ pub mod auth_client {
                     )
                 })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/zkp_auth.Auth/Register");
+            let path = http::uri::PathAndQuery::from_static("/zkp_proto.Auth/Register");
             let mut req = request.into_request();
-            req.extensions_mut().insert(GrpcMethod::new("zkp_auth.Auth", "Register"));
+            req.extensions_mut().insert(GrpcMethod::new("zkp_proto.Auth", "Register"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn create_challenge(
@@ -174,11 +174,11 @@ pub mod auth_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/zkp_auth.Auth/CreateChallenge",
+                "/zkp_proto.Auth/CreateChallenge",
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(GrpcMethod::new("zkp_auth.Auth", "CreateChallenge"));
+                .insert(GrpcMethod::new("zkp_proto.Auth", "CreateChallenge"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn verify_authentication(
@@ -199,11 +199,11 @@ pub mod auth_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/zkp_auth.Auth/VerifyAuthentication",
+                "/zkp_proto.Auth/VerifyAuthentication",
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(GrpcMethod::new("zkp_auth.Auth", "VerifyAuthentication"));
+                .insert(GrpcMethod::new("zkp_proto.Auth", "VerifyAuthentication"));
             self.inner.unary(req, path, codec).await
         }
     }
@@ -316,7 +316,7 @@ pub mod auth_server {
         fn call(&mut self, req: http::Request<B>) -> Self::Future {
             let inner = self.inner.clone();
             match req.uri().path() {
-                "/zkp_auth.Auth/Register" => {
+                "/zkp_proto.Auth/Register" => {
                     #[allow(non_camel_case_types)]
                     struct RegisterSvc<T: Auth>(pub Arc<T>);
                     impl<T: Auth> tonic::server::UnaryService<super::RegisterRequest>
@@ -358,7 +358,7 @@ pub mod auth_server {
                     };
                     Box::pin(fut)
                 }
-                "/zkp_auth.Auth/CreateChallenge" => {
+                "/zkp_proto.Auth/CreateChallenge" => {
                     #[allow(non_camel_case_types)]
                     struct CreateChallengeSvc<T: Auth>(pub Arc<T>);
                     impl<T: Auth> tonic::server::UnaryService<super::ChallengeRequest>
@@ -402,7 +402,7 @@ pub mod auth_server {
                     };
                     Box::pin(fut)
                 }
-                "/zkp_auth.Auth/VerifyAuthentication" => {
+                "/zkp_proto.Auth/VerifyAuthentication" => {
                     #[allow(non_camel_case_types)]
                     struct VerifyAuthenticationSvc<T: Auth>(pub Arc<T>);
                     impl<T: Auth> tonic::server::UnaryService<super::SolutionRequest>
@@ -484,6 +484,6 @@ pub mod auth_server {
         }
     }
     impl<T: Auth> tonic::server::NamedService for AuthServer<T> {
-        const NAME: &'static str = "zkp_auth.Auth";
+        const NAME: &'static str = "zkp_proto.Auth";
     }
 }

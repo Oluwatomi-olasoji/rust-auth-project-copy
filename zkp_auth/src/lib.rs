@@ -1,5 +1,11 @@
 //This library provides functions to generate zero knowledge proofs
 //and to verify them
+pub mod ssi;
+pub mod zkp_proto;
+//pub mod wallet;
+
+
+
 use num_bigint::{BigUint, RandBigInt}; 
 use rand;
 use hex;

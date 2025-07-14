@@ -1,0 +1,29 @@
+{
+  "did": "did:zkp:0268a188e2c8d6c702464661094febae",
+  "credential": {
+    "@context": [
+      "https://www.w3.org/2018/credentials/v1",
+      "https://www.w3.org/2018/credentials/examples/v1"
+    ],
+    "type": [
+      "VerifiableCredential",
+      "UniversityCredential"
+    ],
+    "id": "https://pau.edu.ng/credentials/0268a188e2c8d6c702464661094febae",
+    "issuer": "did:web:pau.edu.ng",
+    "issuanceDate": "2025-07-14T00:49:33.388476294+00:00",
+    "credentialSubject": {
+      "id": "did:zkp:0268a188e2c8d6c702464661094febae",
+      "name": "tomi",
+      "age": 22,
+      "university": "Pan-Atlantic University"
+    },
+    "proof": {
+      "type": "ZKPSignature2024",
+      "verificationMethod": "did:zkp:0268a188e2c8d6c702464661094febae#zkp-key-1",
+      "y1": "DgwwrylRZgFRgRQsyevcS631O/XTIZQjHLARSR9fzoqXvfXC0jD99ASsrVXUQG8523yFg0hWZNSp2YZQCkKvX23/OvnGTj8O4gbzNIPifpWM9ThH5otvR+J1sAvfHLGvDpoTzkAudjpgJ6wBUM+6ZcrLL5vW70mEDirvJPkD0bw=",
+      "y2": "lK+AjOKeYm28ZSp1X8V7lE57A8pgVCxkPtimxIWQpmO5ZfsOojj9yRRET3sYOdYcZVi79p9I7U/gfG8IphtgYoF2qSL9BphWgGui6ORxtrm+Q+AwU6p6rUIeJI3iZ+7Mw4e5riOQwoICgvOMRGEXCDQ2lRk573z8aRT5DG3Hk6w="
+    }
+  },
+  "secret": "769531819740823912232999439581110549398662813370"
+}

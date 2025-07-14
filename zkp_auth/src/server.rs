@@ -2,7 +2,8 @@ mod ssi;
 use num_bigint::BigUint;
 use tonic::{transport::Server, Code,Request, Response, Status, codegen::http::request};
 use zkp_auth::auth_server::{Auth, AuthServer}; 
-use zkp_auth::{RegisterRequest, RegisterResponse,ChallengeRequest, ChallengeResponse, SolutionResponse, SolutionRequest};               use std::collections::HashMap;
+use zkp_auth::{RegisterRequest, RegisterResponse,ChallengeRequest, ChallengeResponse, SolutionResponse, SolutionRequest};               
+use std::collections::HashMap;
 
 use std::fmt::format;
 // For the message struct
@@ -12,20 +13,20 @@ use std::sync::Mutex;
 use ::zkp_auth::ZKP;
 
 pub mod zkp_auth{
-    include!("zkp_auth.rs");
+    include!("zkp_proto.rs");
 }
 
 
 #[derive(Debug, Default)]
 struct AuthImpl {
-    pub  userInfo: Mutex<HashMap<String, UserInformation>>,
-    pub  auth_id_user_hashmap:Mutex<HashMap<String, String>>,
+    pub  userInfo: Mutex<HashMap<String, UserInformation>>,  // Now keyed by DID
+    pub  auth_id_user_hashmap:Mutex<HashMap<String, String>>,  // Maps auth_id to DID
   
 }
 
 #[derive(Debug, Default)]
 pub struct UserInformation {
-    pub username: String,
+    pub did: String,        // Store DID instead of username
     pub y1: BigUint, //these two are used for registration
     pub y2: BigUint,
 
@@ -45,22 +46,28 @@ impl Auth for AuthImpl {
         println!("Processing Registration: {:?}", request);
         let request = request.into_inner();//into inner gives us access to the the private field
 
-        let username = request.user;
+        let user_identifier = request.user;  // This is now a DID
 
         //to prevent empty entries for y1 and y2, which can break the proof
         if (request.y1.is_empty()|| request.y2.is_empty()) {
         return Err(Status::new(Code::InvalidArgument, "Public key y cannot be empty."));
         }
          
+        // Check if this is a DID format
+        if user_identifier.starts_with("did:") {
+            println!("🆔 Registering user with DID: {}", user_identifier);
+        } else {
+            println!("⚠️  Warning: Expected DID format (did:method:identifier)");
+        }
 
         let mut userInfo = UserInformation::default();
-        userInfo.username = username.clone();
+        userInfo.did = user_identifier.clone();
         userInfo.y1 =  BigUint::from_bytes_be(&request.y1);
         userInfo.y2 = BigUint::from_bytes_be(&request.y2);
 
         let mut userInfo_storage = &mut self.userInfo.lock().unwrap(); //need to dd errror handling
         
-        userInfo_storage.insert(username, userInfo);
+        userInfo_storage.insert(user_identifier, userInfo);
         Ok(Response::new(RegisterResponse { }))
 }
 
@@ -70,7 +77,12 @@ impl Auth for AuthImpl {
         println!("Processing Challenge request: {:?}", request);
         let request = request.into_inner();//into inner gives us access to the the private field
 
-        let username = request.user;
+        let user_identifier = request.user;  // This is now a DID
+        
+        // Check if this is a DID format
+        if user_identifier.starts_with("did:") {
+            println!("🆔 Creating challenge for DID: {}", user_identifier);
+        }
         
         //to prevent any empty requests that can break the code
         if (request.r1.is_empty() || request.r2.is_empty()){
@@ -78,10 +90,9 @@ impl Auth for AuthImpl {
         }
         //
 
-
         let mut userInfo_storage = &mut self.userInfo.lock().unwrap(); //need to dd errror handling
        
-        if let Some(userInfo) = userInfo_storage.get_mut(&username) {
+        if let Some(userInfo) = userInfo_storage.get_mut(&user_identifier) {
             userInfo.r1 = BigUint::from_bytes_be(&request.r1);
             userInfo.r2 = BigUint::from_bytes_be(&request.r2);
 
@@ -93,13 +104,13 @@ impl Auth for AuthImpl {
             //storing c
             userInfo.c = c.clone();
 
-            //Storing the user id for each username
+            //Storing the user id for each DID
             let mut auth_id_user_hashmap = &mut self.auth_id_user_hashmap.lock().unwrap(); //need to dd errror handling
-            auth_id_user_hashmap.insert(auth_id.clone(), username);
+            auth_id_user_hashmap.insert(auth_id.clone(), user_identifier);
             
             Ok(Response::new(ChallengeResponse { auth_id, c: c.to_bytes_be() } ))
         } else {
-            Err(Status::new(Code::NotFound, format!("User: {} not found in database", username)))
+            Err(Status::new(Code::NotFound, format!("DID: {} not found in database", user_identifier)))
         }
 
 }
@@ -128,9 +139,9 @@ impl Auth for AuthImpl {
         
         let mut auth_id_user_hashmap = &mut self.auth_id_user_hashmap.lock().unwrap(); //need to dd errror handling
 
-        if let Some(username) = auth_id_user_hashmap.get(&auth_id) {
+        if let Some(user_identifier) = auth_id_user_hashmap.get(&auth_id) {
             let mut userInfo_storage = &mut self.userInfo.lock().unwrap(); //need to dd errror handling
-            let userInfo = userInfo_storage.get_mut(username).expect("auth id not found");
+            let userInfo = userInfo_storage.get_mut(user_identifier).expect("auth id not found");
 
             let s = BigUint::from_bytes_be(&request.s);
 
@@ -146,7 +157,7 @@ impl Auth for AuthImpl {
     let session_id = ZKP::generate_random_string(12);
     
     println!("  ✅ Proof verified successfully!");
-    println!("  ✅ Identity assertion confirmed");
+    println!("  ✅ Self-Sovereign Identity assertion confirmed for DID: {}", user_identifier);
     println!("  → Granting access with session: {}", session_id);
     
     Ok(Response::new(SolutionResponse{session_id}))
@@ -166,6 +177,8 @@ impl Auth for AuthImpl {
 #[tokio::main] //this makes it an synchronous function
 async fn main(){
     let addy = "127.0.0.1:50051".to_string();
+    println!("🔐 SSI Authentication Server - Self-Sovereign Identity with Zero-Knowledge Proofs");
+    println!("📋 This server verifies Decentralized Identifiers (DIDs) using ZKP");
     println!("The server is running here {}", addy);
 
     let auth_impl = AuthImpl::default();

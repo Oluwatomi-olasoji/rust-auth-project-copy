@@ -1,5 +1,5 @@
 syntax = "proto3";
-package zkp_auth;
+package zkp_proto;
 
 //the prover sends a registration message by sending y1 and y2
 message RegisterRequest{
