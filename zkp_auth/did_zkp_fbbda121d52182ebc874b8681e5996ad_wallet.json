@@ -1,0 +1,29 @@
+{
+  "did": "did:zkp:fbbda121d52182ebc874b8681e5996ad",
+  "credential": {
+    "@context": [
+      "https://www.w3.org/2018/credentials/v1",
+      "https://www.w3.org/2018/credentials/examples/v1"
+    ],
+    "type": [
+      "VerifiableCredential",
+      "UniversityCredential"
+    ],
+    "id": "https://pau.edu.ng/credentials/fbbda121d52182ebc874b8681e5996ad",
+    "issuer": "did:web:pau.edu.ng",
+    "issuanceDate": "2025-07-14T02:04:46.004873629+00:00",
+    "credentialSubject": {
+      "id": "did:zkp:fbbda121d52182ebc874b8681e5996ad",
+      "name": "Oluwatomi",
+      "age": 22,
+      "university": "Pan-Atlantic University"
+    },
+    "proof": {
+      "type": "ZKPSignature2024",
+      "verificationMethod": "did:zkp:fbbda121d52182ebc874b8681e5996ad#zkp-key-1",
+      "y1": "f0T0XRup30zHEXW3Gs8ryK0/eV04I3YxTPSyffAgQHLbJqLsD9VsMhMCSaZIb3chYLOCl9ujdudca5sUjNiiVWJptKi/oG9CleP2MZ6pPNmbVYzipHS2e4qio4ozJWVyW9BM++YldW58ZX2Ch9c8W3xUaP5BSk8qNktZ2zvLpFg=",
+      "y2": "gGJbT0IR6+Ii/OKeoKFcb1cydaWmnaUVIIHKlxCf1tmV/7Wc8KOXe+ST5FaJgC7QjnwkDPWIZxk0oxsA/Pxg91hTYe9kCMMWqrQeRp3w2yossGiMkU1tDowYc8NlQmC6RwWK3lqRBEfeNrOUPTJnGtTf5Ohxlqb82b8vDNNKS+g="
+    }
+  },
+  "secret": "785577786024010309999135522149070844477921808249"
+}
